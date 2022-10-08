@@ -12,18 +12,31 @@ import os
 
 # bot = commands.Bot(command_prefix='!')
 
-
-intents = discord.Intents.all()
-
-client = discord.Client(intents=intents)
-token = "OTU0Mzc3Nzc4OTg2MzczMTYw.GXGlTG.lmblfqsEWlhPkWsb9iocFWlrpKlr7tFCbzsNeY"
-#channel_id = 963024233414397962 #현황 채널
-channel_id = 957992975328219146  # 디버깅 채널
-
-guild_id = 909357916677623869
 code_block = True
 crawl_with_group = True
+debug = True
 percent = 0.25
+data_root = "data"
+baekjoon_data_file = "baekjoon_data.json"
+binary_data_file = "binary_data.json"
+baekjoon_data_dir = os.path.join(data_root, baekjoon_data_file)
+binary_data_dir = os.path.join(data_root, binary_data_file)
+
+
+
+with open("data/binary_data.json", "r", encoding='UTF8') as f:
+    binary_data = json.load(f)
+token = binary_data["token"]
+
+if debug :
+    channel_id = binary_data["debug_channel_id"]
+else :
+    channel_id = binary_data["announce_channel_id"]
+guild_id = binary_data["guild_id"]
+
+
+intents = discord.Intents.all()
+client = discord.Client(intents=intents)
 
 
 @client.event
@@ -166,17 +179,15 @@ def crawl(url, cookies={}, headers={"User-Agent": "Mozilla/5.0"}, save_html=Fals
 
 def get_members(group_id):
     members = []
-    url = "https://www.acmicpc.net/group/ranklist/" + group_id
+    url = "https://www.acmicpc.net/group/ranklist/" + group_id    
     soup = crawl(url)
 
-    div_admin_member = soup.select_one("div#admin_member")
-    div_team_member = soup.select_one("div#team_member")
-    import pdb; pdb.set_trace()
-    for mem in div_admin_member.find_all("h4"):
-        members.append(mem.text.split(" ")[0][1:])
-
-    for mem in div_team_member.find_all("h4"):
-        members.append(mem.text.split(" ")[0][1:].split("\n")[0])
+    soup.find_all("tr")    
+    member_list = soup.find_all("tr")    
+    for x in range(1, len(member_list)):
+        nick_name = member_list[x].a.text
+        members.append(nick_name)
+    
 
     return members
 
@@ -277,10 +288,11 @@ def get_day_problems(members, start_day, members_name, ignore_list):
         field = plant_grass(start_day, today, user_day_problems)
 
         if field != None :
+            text += mem
             if mem in members_name.keys():
+                text += " : "
                 text += members_name[mem]
-            else:
-                text += mem
+            
 
             text += "\n"
             
@@ -295,19 +307,19 @@ def save_new_data():
     data["ignore_list"] = []
     data["name"] = {}
     data["group_id"] = ""
-    with open("data.json", "w", encoding='utf-8') as json_file:
+    with open(baekjoon_data_dir, "w", encoding='utf-8') as json_file:
         json.dump(data, json_file)
 
 
 def save_data(data):
-    with open("data.json", "w", encoding='utf-8') as json_file:
+    with open(baekjoon_data_dir, "w", encoding='utf-8') as json_file:
         json.dump(data, json_file, indent="\t", ensure_ascii=False)
 
 
-def load_data():
-    if (not ("data.json" in os.listdir())):
+def load_data():    
+    if (not (baekjoon_data_file in os.listdir(data_root))):
         save_new_data()
-    with open('data.json', encoding='UTF8') as f:
+    with open(baekjoon_data_dir, encoding='UTF8') as f:
         data = json.load(f)
     return data
 
@@ -406,7 +418,7 @@ async def print_memeber_status():
         members = get_members(group_id)
     else:
         members = members_name.keys()
-
+    
     print("get problems...")
     text += get_day_problems(members, start_day, members_name, ignore_list)
     print("printing status...")
