@@ -14,7 +14,7 @@ import os
 
 code_block = True
 crawl_with_group = True
-debug = True
+debug = False
 percent = 0.25
 data_root = "data"
 baekjoon_data_file = "baekjoon_data.json"
@@ -147,8 +147,8 @@ async def send_message(channel_id, msg, msg_type = "normal"):
 
 
 
-        if len(msg) > 2000 :
-            idx = msg[:2000].rfind('!')
+        if len(msg) > 1900 :
+            idx = msg[:1900].rfind(')')
             msg1 = msg[:idx+2]+"```"
             msg2 = "```ansi\n"+msg[idx+3:]
             await channel.send(msg1)
@@ -250,7 +250,7 @@ def plant_grass(start_day, today, seed):
         total_day += 1
         counting_day = int(("%04d%02d%02d") % (year, month, day))
 
-    field += "   ( " + str(total_grass_num) + " / " + str(total_day) + " )"
+    
     if grass_num > 0:
         if max < grass_num:
             max = grass_num
@@ -258,7 +258,8 @@ def plant_grass(start_day, today, seed):
     if max > 0:
         if total_grass_num >= total_day* percent :
 
-            field += "\n최대 " + str(max) + "일 연속!!"
+            field += "\n최대 " + str(max) + "일 연속!!   "
+            field += "( " + str(total_grass_num) + " / " + str(total_day) + " )"
             field += "\n\n"
             return field
         else :
